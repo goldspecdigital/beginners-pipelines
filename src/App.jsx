@@ -5,12 +5,15 @@ function App() {
   const [todo, setTodo] = useState('');
   const [todoList, setTodoList] = useState([]);
 
-  const onInput = (event) => {
-    setTodo(event.target.value);
+  const onInput = (todo) => {
+    setTodo(todo);
   };
 
   const onSubmit = (event) => {
-    event.preventDefault();
+    if (event) {
+      event.preventDefault();
+    }
+
     setTodoList([...todoList, todo])
     setTodo('')
   };
@@ -20,7 +23,11 @@ function App() {
       <h1>Todo List</h1>
 
       <form onSubmit={onSubmit}>
-        <input type="text" value={todo} onChange={onInput} />
+        <input
+          type="text"
+          value={todo}
+          onChange={(e) => onInput(e.target.value)}
+        />
         <button type="submit">Add todo</button>
       </form>
 
