@@ -165,7 +165,9 @@
                           "S3OriginConfig": {}
                       }
                   ],
-                  "CloudFrontDefaultCertificate": true
+                  "ViewerCertificate": {
+                    "CloudFrontDefaultCertificate": true
+                  }
               }
           },
           "Type": "AWS::CloudFront::Distribution"
