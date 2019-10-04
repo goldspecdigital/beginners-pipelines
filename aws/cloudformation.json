@@ -1,0 +1,176 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create the infrastructure needed to run the Beginners Pipeline app",
+  "Outputs": {
+      "BucketName": {
+          "Description": "The S3 bucket name",
+          "Value": {
+              "Fn::Join": [
+                  "-",
+                  [
+                      "beginners-pipelines",
+                      {
+                          "Ref": "Uuid"
+                      }
+                  ]
+              ]
+          }
+      },
+      "CloudFrontDomain": {
+          "Description": "The domain name of the CloudFront distribution",
+          "Value": {
+              "Fn::GetAtt": [
+                  "Distribution",
+                  "DomainName"
+              ]
+          }
+      },
+      "CloudFrontId": {
+          "Description": "The ID of the CloudFront distribution",
+          "Value": {
+              "Ref": "Distribution"
+          }
+      }
+  },
+  "Parameters": {
+      "Uuid": {
+          "Default": "a370c253-1724-468c-a3cc-bf73339ac07d",
+          "Description": "The unique ID for this stack.",
+          "MaxLength": "36",
+          "MinLength": "36",
+          "Type": "String"
+      }
+  },
+  "Resources": {
+      "Bucket": {
+          "Properties": {
+              "AccessControl": "PublicRead",
+              "BucketName": {
+                  "Fn::Join": [
+                      "-",
+                      [
+                          "beginners-pipelines",
+                          {
+                              "Ref": "Uuid"
+                          }
+                      ]
+                  ]
+              }
+          },
+          "Type": "AWS::S3::Bucket"
+      },
+      "CiUser": {
+          "Properties": {
+              "Policies": [
+                  {
+                      "PolicyDocument": {
+                          "Statement": [
+                              {
+                                  "Action": "s3:*",
+                                  "Effect": "Allow",
+                                  "Resource": "*"
+                              },
+                              {
+                                  "Action": "cloudfront:CreateInvalidation",
+                                  "Effect": "Allow",
+                                  "Resource": "*"
+                              }
+                          ],
+                          "Version": "2012-10-17"
+                      },
+                      "PolicyName": "CiUserPolicy"
+                  }
+              ],
+              "UserName": "ci-beginners-pipelines"
+          },
+          "Type": "AWS::IAM::User"
+      },
+      "Distribution": {
+          "Properties": {
+              "DistributionConfig": {
+                  "CacheBehaviors": [
+                      {
+                          "AllowedMethods": [
+                              "HEAD",
+                              "GET"
+                          ],
+                          "CachedMethods": [
+                              "HEAD",
+                              "GET"
+                          ],
+                          "ForwardedValues": {
+                              "QueryString": "false"
+                          },
+                          "PathPattern": "*",
+                          "TargetOriginId": {
+                              "Fn::Join": [
+                                  "-",
+                                  [
+                                      "S3",
+                                      {
+                                          "Ref": "Bucket"
+                                      }
+                                  ]
+                              ]
+                          },
+                          "ViewerProtocolPolicy": "redirect-to-https"
+                      }
+                  ],
+                  "CustomErrorResponses": [
+                      {
+                          "ErrorCode": 404,
+                          "ResponseCode": 200,
+                          "ResponsePagePath": "/index.html"
+                      }
+                  ],
+                  "DefaultCacheBehavior": {
+                      "ForwardedValues": {
+                          "QueryString": "false"
+                      },
+                      "TargetOriginId": {
+                          "Fn::Join": [
+                              "-",
+                              [
+                                  "S3",
+                                  {
+                                      "Ref": "Bucket"
+                                  }
+                              ]
+                          ]
+                      },
+                      "ViewerProtocolPolicy": "redirect-to-https"
+                  },
+                  "DefaultRootObject": "index.html",
+                  "Enabled": "true",
+                  "IPV6Enabled": "true",
+                  "Origins": [
+                      {
+                          "DomainName": {
+                              "Fn::GetAtt": [
+                                  "Bucket",
+                                  "DomainName"
+                              ]
+                          },
+                          "Id": {
+                              "Fn::Join": [
+                                  "-",
+                                  [
+                                      "S3",
+                                      {
+                                          "Ref": "Bucket"
+                                      }
+                                  ]
+                              ]
+                          },
+                          "S3OriginConfig": {}
+                      }
+                  ],
+                  "ViewerCertificate": {
+                    "CloudFrontDefaultCertificate": true
+                  }
+              }
+          },
+          "Type": "AWS::CloudFront::Distribution"
+      }
+  }
+}
